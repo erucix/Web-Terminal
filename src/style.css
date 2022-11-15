@@ -1,0 +1,64 @@
+::selection {
+  background-color: #FF5D00;
+  color: #fff;
+}
+
+@font-face {
+  font-family: jetbrains;
+  src: url('jetbrains.woff2');
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  color: #fff;
+  font-family: jetbrains;
+  font-size: 12px;
+  box-sizing: border-box;
+}
+
+body {
+  padding: 10px;
+  min-height: 100vh;
+  min-width: 100vw;
+  background-color: #000;
+}
+
+.topPlaceholder {
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+}
+
+.default {
+  font-weight: bolder;
+}
+.osName, .username {
+  color: #00FFD5;
+}
+.rate {
+  color: #FF003A;
+}
+.whoami {
+  color: #BFFF00;
+}
+.bracket {
+  color: #FF5D00;
+}
+.green {
+  color: #00FF54;
+  font-weight: bolder;
+}
+.red {
+  color: #FF0000;
+  font-weight: bolder;
+}
+.codeValue {
+  color: #fff;
+  border: none;
+  outline: none;
+  width: 100%;
+  text-decoration: none;
+  background-color: #000;
+  resize: none;
+}
