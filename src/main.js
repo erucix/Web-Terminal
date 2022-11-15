@@ -9,7 +9,20 @@ const battery = navigator.getBattery().then(data => {
 })
 
 const keywords = {
-  "setuser": function(query = "") {
+  "clear": function(query) {
+    if(query=="help") {
+      return "Clears terminal screen"
+    } else {
+      document.querySelectorAll(".topPlaceholder").forEach((element)=>{
+        element.remove()
+      })
+      document.querySelectorAll(".outputValue").forEach((element)=>{
+        element.remove()
+      })
+      return "";
+    }
+  },
+  "setuser": function(query) {
     if (query == "help") {
       return `Change username. Default: erucix`
     } else {
@@ -147,4 +160,3 @@ function newLine() {
 }
 
 newLine()
-//gg
