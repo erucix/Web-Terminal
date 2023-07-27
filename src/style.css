@@ -87,6 +87,7 @@ body {
   text-decoration: none !important;
   caret-color: white;
   user-select: none;
+  caret-shape: block;
 }
 
 .keywordInputBox_under {

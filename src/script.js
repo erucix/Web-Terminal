@@ -3,7 +3,7 @@
 const keywords = {
   "help": {
     "a": function (keyword) {
-      if (!keyword.length) {
+      if (!keyword.length || keyword[0] == "help") {
         printLn(keywords["help"].b())
       } else if (keywords.hasOwnProperty(keyword[0])) {
         console.log("j")
@@ -23,19 +23,6 @@ const keywords = {
       printLn(helpBody)
     }
   },
-  "game": {
-    "a": function (keyword) {
-      printLn("no games anymore")
-    },
-    "b": "shows how many games you have"
-  },
-  "shame": {
-    "a": function () {
-      printLn(333)
-      return;
-    },
-    "b": "shame shame"
-  },
   "clear": {
     "a": function () {
       const allActiveBodyContainer = document.querySelectorAll("div")
@@ -44,6 +31,87 @@ const keywords = {
       })
     },
     "b": "clears screen"
+  },
+  "history": {
+    "a": function () {
+      const historyCopy = history
+      historyCopy.shift()
+      printLn(historyCopy.join("<br>"))
+    },
+    "b": "Shows history of command usage"
+  },
+  "export": {
+    "a": function (keyword) {
+      let varName = keyword[0].slice(0, keyword[0].indexOf("="))
+      let varValue = keyword[0].slice(keyword[0].indexOf("=") + 1, keyword[0].length)
+      localStorage.setItem(varName, varValue)
+    },
+    "b": "Sets environment variable.<br>&nbsp;&nbsp;&nbsp;&nbsp;Usage:<br>&nbsp;&nbsp;&nbsp;&nbsp;export MY_NAME='Chris Evans'<br>&nbsp;&nbsp;&nbsp;&nbsp;echo $MY_NAME"
+  },
+  "echo": {
+    "a": function (keyword) {
+      keyword = keyword.map(elem => {
+        if (elem.startsWith("$")) {
+          return keywords.getenv.a([elem.slice(1)], true) || keywords.getpmv.a([elem.slice(1)], true)
+        }
+        return elem
+      })
+      printLn(keyword.join(" "))
+    },
+    "b": "Prints on the screen"
+  },
+  "getenv": {
+    "a": function (keyword, callback) {
+      let value = sessionStorage.getItem(keyword[0])
+      if (callback) return value
+      printLn(value)
+    },
+    "b": "Prints environment variable.<br>&nbsp;&nbsp;&nbsp;&nbsp;Usage:<br>&nbsp;&nbsp;&nbsp;&nbsp;getenv MY_NAME"
+  },
+  "getpmv": {
+    "a": function (keyword, callback) {
+      let value = localStorage.getItem(keyword[0])
+      if (callback) return value
+      printLn(value)
+    },
+    "b": "Prints permanent variable.<br>&nbsp;&nbsp;&nbsp;&nbsp;Usage:<br>&nbsp;&nbsp;&nbsp;&nbsp;getpmv MY_NAME"
+  },
+  "whoami": {
+    "a": function (callback) {
+      let whoami = keywords.getpmv.a(["whoami"], true)
+      whoami = whoami || "erucix"
+      if (callback) return whoami
+      printLn(whoami)
+    },
+    "b": "Prints effective username"
+  },
+  "curl": {
+    "a": function (keyword) {
+      let http = new XMLHttpRequest()
+      http.open("GET", keyword[0])
+      http.onload = function () {
+        printLn(http.responseText)
+      }
+      http.onerror = function (e) {
+        printLn("Can't access URL: " + JSON.stringify(e), true)
+      }
+      http.send()
+    },
+    "b": "Sends get request to URL<br>&nbsp;&nbsp;&nbsp;&nbsp;Usage:<br>&nbsp;&nbsp;&nbsp;&nbsp;curl https://google.com"
+  },
+  "setuser": {
+    "a": function (keyword) {
+      if (!keyword[0]) return;
+      keywords.export.a(["whoami=" + keyword[0]])
+      keywords.whoami.a()
+    },
+    "b": "Sets user name.<br>&nbsp;&nbsp;&nbsp;&nbsp;Usage:<br>&nbsp;&nbsp;&nbsp;&nbsp;setuser chris"
+  },
+  "useragent": {
+    "a": function () {
+      printLn(navigator.userAgent)
+    },
+    "b": "Prints useragent value"
   }
 }
 
@@ -51,16 +119,23 @@ function keywordMissing(keyword) {
   printLn(`<span class="red">${keyword}:</span> command not found`)
 }
 
-function printLn(line) {
+function printLn(line, text) {
   if (!line) return;
   let outputBox = document.body.querySelectorAll(".outputBox")
   outputBox = outputBox[outputBox.length - 1]
-  outputBox.innerHTML = line;
+  if (text) {
+    outputBox.innerText = line;
+  } else {
+    outputBox.innerHTML = line;
+  }
 }
 
 const history = [""]
+let pos = 0
 
 function createActiveBodyContainer() {
+
+  const inputEvent = new Event("input", { bubbles: true, cancelable: true })
 
 
   const activeBodyContainer = document.createElement("div")
@@ -104,15 +179,15 @@ function createActiveBodyContainer() {
 
   bracket1.innerHTML = "&boxdr;&HorizontalLine;&HorizontalLine;&HorizontalLine;"
   bracket2.innerText = "("
-  deviceName.textContent = "bull"
+  deviceName.textContent = navigator.userAgentData.platform.toLowerCase()
   centralUnicode.textContent = "@"
-  userName.textContent = "erucix"
+  userName.textContent = keywords.whoami.a(true)
   bracket3.innerText = ")"
   bracket4.innerText = "["
   currentDirectory.textContent = "~"
   bracket9.innerText = "]"
   bracket5.innerHTML = "&boxur;&HorizontalLine;&HorizontalLine;&HorizontalLine;"
-  euid.textContent = "$"
+  euid.textContent = keywords.whoami.a(true) == "root" ? "#" : "$"
 
   preDisplayText.appendChild(bracket1) //append 1,2
   preDisplayText.appendChild(bracket2) //append 1,2
@@ -156,6 +231,7 @@ function createActiveBodyContainer() {
         }
       }
       history.push(primaryValue + (inputValue.join(" ") != "" ? " " : "") + inputValue.join(" "))
+      pos = history.length - 1
       keywordInputBox_over.removeEventListener("input", () => { })
       window.removeEventListener("click", () => { })
       createActiveBodyContainer()
@@ -175,10 +251,16 @@ function createActiveBodyContainer() {
 
   keywordInputBox_over.addEventListener("keydown", (e) => {
 
+    if (e.keyCode == 38) {
+      keywordInputBox_over.textContent = history[pos ? pos-- : 0]
+      keywordInputBox_over.dispatchEvent(inputEvent)
+    } else if (e.keyCode == 40) {
+      pos < history.length && pos++
+      keywordInputBox_over.textContent = history[pos]
+      keywordInputBox_over.dispatchEvent(inputEvent)
+    }
   })
 
 }
-
-
 
 createActiveBodyContainer()
