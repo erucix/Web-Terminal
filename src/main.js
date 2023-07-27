@@ -1,162 +1,184 @@
-const terminalBody = document.querySelectorAll(".terminalBody")[0]
-
-var charging, level, chargingTime, dischargingTime;
-const battery = navigator.getBattery().then(data => {
-  charging = data.charging
-  level = data.level * 100 + "%"
-  chargingTime = data.chargingTime
-  dischargingTime = data.dischargingTime
-})
+"use strict";
 
 const keywords = {
-  "clear": function(query) {
-    if(query=="help") {
-      return "Clears terminal screen"
-    } else {
-      document.querySelectorAll(".topPlaceholder").forEach((element)=>{
-        element.remove()
-      })
-      document.querySelectorAll(".outputValue").forEach((element)=>{
-        element.remove()
-      })
-      return "";
-    }
-  },
-  "setuser": function(query) {
-    if (query == "help") {
-      return `Change username. Default: erucix`
-    } else {
-      localStorage.setItem("whoami", prompt("Enter username: ", this.whoami()))
-      localStorage.setItem("whoami-nr", localStorage.getItem("whoami"))
-      return "New Username: " + localStorage.getItem("whoami")
-    }
-  },
-  "exit": function(query) {
-    if (query == "help") {
-      return "Exits current terminal"
-    } else {
-      if (this.whoami() == "root") {
-        localStorage.setItem("whoami", localStorage.getItem("whoami-nr"))
-        return ""
+  "help": {
+    "a": function (keyword) {
+      if (!keyword.length) {
+        printLn(keywords["help"].b())
+      } else if (keywords.hasOwnProperty(keyword[0])) {
+        console.log("j")
+        printLn(keywords[keyword[0]].b)
       } else {
-        setTimeout(function() { window.close() }, 1000)
-        return "Exitting..."
+        keywordMissing(keyword[0])
       }
-    }
-  },
-  "su": function(query) {
-    if (query == "help") {
-      return "Get superuser permission"
-    } else {
-      localStorage.setItem("whoami", "root")
-      return '<span class="green">[</span><span class="red">!</span><span class="green">]</span> Proceed with caution ;)'
-    }
-  },
-  "whoami": function(query) {
-    if (query == "help") {
-      return "Returns your superuser type"
-    } else {
-      return localStorage.getItem("whoami") == null ? "erucix" : localStorage.getItem("whoami");
-    }
-  },
-  "sysinfo": function(query) {
-    if (query == "help") {
-      return "Shows JS accessable system details"
-    } else {
-      const row = document.createElement("span");
-      row.innerHTML = `
-      [+] OS: ${this.osname()}<br>
-      [+] Max Touch Point: ${navigator.maxTouchPoints}<br>
-      [+] Battery Level: ${level}<br>
-      [+] Charging: ${charging}<br>
-      [+] Charging Time: ${chargingTime}<br>
-      [+] Discharging Time: ${dischargingTime}<br>
-      [+] Vendor: ${navigator.vendor}<br>
-      [+] DoNotTrack: ${navigator.doNotTrack}<br>
-      [+] Platform: ${navigator.platform}<br>
-      [+] Device Memory: ${navigator.deviceMemory}<br>
-      [+] Eruda Attached: ${"eruda" in window}<br>
-      [+] Screen Height: ${window.innerHeight}<br>
-      [+] Screen Width: ${window.innerWidth}<br>
-      [+] Cookie Enabled: ${navigator.cookieEnabled}<br>
-      [+] Is Webdriver: ${navigator.webdriver}<br>
-      `
-      return row.innerHTML;
-    }
-  },
-  "osname": function(query) {
-    if (query == "help") {
-      return "Your OS according to navigator"
-    } else {
-      const appVersion = navigator.appVersion;
-      if (appVersion.indexOf("Android") != -1) {
-        return "android"
-      } else if (appVersion.indexOf("Linux") != -1) {
-        return "linux"
-      } else if (appVersion.indexOf("Win") != -1) {
-        return "windows"
-      } else if (appVersion.indexOf("Mac") != -1) {
-        return "mac"
-      } else {
-        return "hecker"
-      }
-    }
-  },
-  "help": function(query) {
-    if (query == "help") {
-      return "Shows this help message"
-    } else {
-      const row = document.createElement("span");
-      let i = 0;
+      return;
+    },
+    "b": function () {
+      let helpBody = ""
+      let i = 1;
       for (let val in keywords) {
-        row.innerHTML += '<span class="green">[</span>*<span class="green">]</span> ' + Object.getOwnPropertyNames(keywords)[i] + " - " + keywords[val]("help") + "<br>";
-        i++;
+        if (val == "help") continue
+        helpBody += `<span class='bracket'>[</span><span class='red'>${i++}</span><span class='bracket'>]</span> ${val} <span class='nabla'>&nabla;</span> ${keywords[val].b}<br>`
       }
-      return row.innerHTML;
+      printLn(helpBody)
     }
+  },
+  "game": {
+    "a": function (keyword) {
+      printLn("no games anymore")
+    },
+    "b": "shows how many games you have"
+  },
+  "shame": {
+    "a": function () {
+      printLn(333)
+      return;
+    },
+    "b": "shame shame"
+  },
+  "clear": {
+    "a": function () {
+      const allActiveBodyContainer = document.querySelectorAll("div")
+      allActiveBodyContainer.forEach((elem) => {
+        elem.remove()
+      })
+    },
+    "b": "clears screen"
   }
 }
 
-function execute(value = "") {
-  return keywords[value]()
+function keywordMissing(keyword) {
+  printLn(`<span class="red">${keyword}:</span> command not found`)
 }
 
-function output(code) {
-  let outputValue = document.createElement("span");
-  outputValue.classList.add("outputValue")
-  if (code == "") {
-    newLine()
-    return;
-  } else if (code in keywords) {
-    outputValue.innerHTML = execute(code)
-  } else {
-    outputValue.innerHTML = "<span class='red'>" + code + "</span>" + " is not defined in keywords"
-  }
-  terminalBody.appendChild(outputValue)
-  newLine()
+function printLn(line) {
+  if (!line) return;
+  let outputBox = document.body.querySelectorAll(".outputBox")
+  outputBox = outputBox[outputBox.length - 1]
+  outputBox.innerHTML = line;
 }
 
-function newLine() {
-  const oldCodeValue = document.querySelectorAll(".codeValue");
-  oldCodeValue.forEach((element) => {
-    element.removeEventListener("keydown", () => {})
-    element.setAttribute("disabled", "");
+const history = [""]
+
+function createActiveBodyContainer() {
+
+
+  const activeBodyContainer = document.createElement("div")
+  const preDisplayText = document.createElement("span")
+  const bracket1 = document.createElement("span")
+  const bracket2 = document.createElement("span")
+  const deviceName = document.createElement("span")
+  const centralUnicode = document.createElement("span")
+  const userName = document.createElement("span")
+  const bracket3 = document.createElement("span")
+  const bracket4 = document.createElement("span")
+  const currentDirectory = document.createElement("span")
+  const bracket9 = document.createElement("span")
+  const inputContainer = document.createElement("span")
+  const bracket5 = document.createElement("span")
+  const euid = document.createElement("span")
+  const keywordInputBox_under = document.createElement("span")
+  const keywordInputBox_over = document.createElement("span")
+  const outputBox = document.createElement("span")
+
+  activeBodyContainer.setAttribute("class", "activeBodyContainer")
+  preDisplayText.setAttribute("class", "preDisplayText")
+  bracket1.setAttribute("class", "bracket")
+  bracket2.setAttribute("class", "bracket")
+  deviceName.setAttribute("class", "deviceName")
+  centralUnicode.setAttribute("class", "centralUnicode")
+  userName.setAttribute("class", "userName")
+  bracket3.setAttribute("class", "bracket")
+  bracket4.setAttribute("class", "bracket")
+  currentDirectory.setAttribute("class", "currentDirectory")
+  bracket9.setAttribute("class", "bracket")
+  inputContainer.setAttribute("class", "inputContainer")
+  bracket5.setAttribute("class", "bracket")
+  euid.setAttribute("class", "euid")
+  keywordInputBox_under.setAttribute("class", "keywordInputBox_under")
+  keywordInputBox_over.setAttribute("class", "keywordInputBox_over")
+  keywordInputBox_over.setAttribute("contenteditable", "true")
+  keywordInputBox_over.setAttribute("spellcheck", "false")
+  outputBox.setAttribute("class", "outputBox")
+
+
+  bracket1.innerHTML = "&boxdr;&HorizontalLine;&HorizontalLine;&HorizontalLine;"
+  bracket2.innerText = "("
+  deviceName.textContent = "bull"
+  centralUnicode.textContent = "@"
+  userName.textContent = "erucix"
+  bracket3.innerText = ")"
+  bracket4.innerText = "["
+  currentDirectory.textContent = "~"
+  bracket9.innerText = "]"
+  bracket5.innerHTML = "&boxur;&HorizontalLine;&HorizontalLine;&HorizontalLine;"
+  euid.textContent = "$"
+
+  preDisplayText.appendChild(bracket1) //append 1,2
+  preDisplayText.appendChild(bracket2) //append 1,2
+  preDisplayText.appendChild(deviceName) //append 1,3
+  preDisplayText.appendChild(centralUnicode) // append 1,4
+  preDisplayText.appendChild(userName) // append 1,5
+  preDisplayText.appendChild(bracket3) //append 1,6
+  preDisplayText.appendChild(bracket4) //append 1,7
+  preDisplayText.append(currentDirectory) //append 1,8
+  preDisplayText.appendChild(bracket9) //append 1,9
+  inputContainer.appendChild(bracket5) //append 2,1
+  inputContainer.appendChild(euid)    //append 2,2
+
+  inputContainer.appendChild(keywordInputBox_under)
+  inputContainer.appendChild(keywordInputBox_over) //append 2,3
+
+
+  activeBodyContainer.appendChild(preDisplayText)  //append 1
+  activeBodyContainer.appendChild(inputContainer) // append 2
+  activeBodyContainer.appendChild(outputBox) //append 3
+  document.body.appendChild(activeBodyContainer) //append 4
+
+  window.addEventListener("click", () => {
+    keywordInputBox_over.focus()
   })
 
-  const topPlaceholder = document.createElement("div");
+  keywordInputBox_over.focus()
 
-  topPlaceholder.innerHTML = `<span class="topPlaceholder"><span class="bracket default">[&nbsp;</span><span class="osName default">${keywords.osname()}</span><span class="rate default">&nbsp;@&nbsp;</span><span class="username default">${keywords.whoami()}</span><span class="bracket default">&nbsp;]</span>&nbsp;<span class="whoami default">${keywords.whoami() == "root" ? "#" : "$"}</span>&nbsp;<input type="text default" class="codeValue">`;
-  topPlaceholder.classList.add("topPlaceholder");
-  terminalBody.appendChild(topPlaceholder)
+  keywordInputBox_over.addEventListener("input", (e) => {
+    const inputValue = keywordInputBox_over.textContent.trim().replace(String.fromCharCode(160), " ").split(" ").join(" ").toString().split(" ")
+    let primaryValue = inputValue[0]
+    inputValue.shift()
 
-  let newCodeValue = document.querySelectorAll(".codeValue");
-  newCodeValue = newCodeValue[newCodeValue.length - 1];
-
-  topPlaceholder.addEventListener("keydown", (e) => {
-    if (e.keyCode == "13") {
-      output(newCodeValue.value)
+    if (e.inputType == "insertParagraph") {
+      if (primaryValue != "") {
+        if (keywords.hasOwnProperty(primaryValue)) {
+          keywords[primaryValue].a(inputValue)
+          keywordInputBox_over.setAttribute("contentEditable", "false")
+        } else {
+          keywordMissing(primaryValue)
+        }
+      }
+      history.push(primaryValue + (inputValue.join(" ") != "" ? " " : "") + inputValue.join(" "))
+      keywordInputBox_over.removeEventListener("input", () => { })
+      window.removeEventListener("click", () => { })
+      createActiveBodyContainer()
     }
+
+    if (keywords.hasOwnProperty(primaryValue)) {
+      primaryValue = `<p>${primaryValue}</p>&nbsp;`
+    } else {
+      primaryValue = primaryValue + " "
+    }
+
+    keywordInputBox_under.innerHTML = primaryValue + inputValue.join(" ")
+
   })
+
+
+
+  keywordInputBox_over.addEventListener("keydown", (e) => {
+
+  })
+
 }
 
-newLine()
+
+
+createActiveBodyContainer()
